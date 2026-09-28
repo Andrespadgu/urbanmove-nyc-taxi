@@ -1,0 +1,30 @@
+# Datos crudos (descargar de Kaggle)
+train/
+test/
+sample_submission/
+
+# Archivos del sistema
+desktop.ini
+*.lnk
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.ipynb_checkpoints/
+
+# Versiones antiguas de la presentación
+entrega/presentacion_urbanmove_2.pptx
+entrega/presentacion_urbanmove_3.pptx
+entrega/presentacion_urbanmove_4.pptx
+entrega/presentacion_urbanmove_mejorada.pptx
+
+# Archivos internos de trabajo
+CLAUDE.md
+CONTEXTO.md
+SKILL.md
+SKILL (2).md
+.claude/
+Screenshot*.png
+scripts/

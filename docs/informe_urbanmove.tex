@@ -1,0 +1,446 @@
+%% ============================================================
+%%  Informe académico — UrbanMove: NYC Taxi Trip Duration
+%%  Aprendizaje de Máquinas No Supervisado — 2026-II
+%%  Universidad de La Sabana
+%% ============================================================
+\documentclass[12pt, a4paper]{article}
+
+%% --- Codificación y lenguaje ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish,es-nodecimaldot]{babel}
+
+%% --- Tipografía ---
+\usepackage{lmodern}
+\usepackage{microtype}
+
+%% --- Geometría ---
+\usepackage[top=2.5cm, bottom=2.5cm, left=3cm, right=2.5cm]{geometry}
+
+%% --- Matemáticas ---
+\usepackage{amsmath, amssymb, amsthm}
+
+%% --- Tablas y figuras ---
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+
+%% --- Colores y cajas ---
+\usepackage[dvipsnames]{xcolor}
+\usepackage{mdframed}
+
+%% --- Numeración y listas ---
+\usepackage{enumitem}
+
+%% --- Encabezados ---
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small UrbanMove — NYC Taxi}
+\fancyhead[R]{\small ML No Supervisado · 2026-II}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+%% --- Hipervínculos ---
+\usepackage[hidelinks]{hyperref}
+
+%% --- Interlineado ---
+\usepackage{setspace}
+\setstretch{1.15}
+
+%% --- Definiciones de colores corporativos ---
+\definecolor{azulprincipal}{HTML}{1A3A5C}
+\definecolor{cianacc}{HTML}{00B4D8}
+\definecolor{naranja}{HTML}{FF9F1C}
+\definecolor{verdepanel}{HTML}{4CAF50}
+\definecolor{grisclaro}{HTML}{F5F5F5}
+\definecolor{grisnota}{HTML}{888888}
+
+%% --- Caja de hallazgo destacado ---
+\newmdenv[
+  backgroundcolor=grisclaro,
+  linecolor=azulprincipal,
+  linewidth=1.2pt,
+  leftmargin=0pt,
+  rightmargin=0pt,
+  innerleftmargin=10pt,
+  innerrightmargin=10pt,
+  innertopmargin=6pt,
+  innerbottommargin=6pt,
+  skipabove=8pt,
+  skipbelow=8pt
+]{hallazgo}
+
+%% ============================================================
+\begin{document}
+
+%% ---- PORTADA -----------------------------------------------
+\begin{titlepage}
+  \centering
+  \vspace*{1.5cm}
+
+  {\color{azulprincipal}\rule{\linewidth}{1.5pt}}
+  \vspace{0.4cm}
+
+  {\Huge\bfseries\color{azulprincipal}
+    Análisis No Supervisado de Patrones\\[6pt]
+    de Movilidad Urbana en Taxi:\\[6pt]
+    Caso UrbanMove --- Nueva York
+  }
+
+  \vspace{0.5cm}
+  {\color{azulprincipal}\rule{\linewidth}{1.5pt}}
+
+  \vspace{1.2cm}
+
+  {\large\itshape Aprendizaje de Máquinas No Supervisado}\\[4pt]
+  {\large Universidad de La Sabana $\cdot$ Período 2026-II}
+
+  \vspace{2cm}
+
+  {\large\bfseries Integrantes}\\[0.5cm]
+  \begin{tabular}{ll}
+    Andrés Padilla   & Nicolás Carvajal \\[4pt]
+    Luis Ortega      & Sara Montañez
+  \end{tabular}
+
+  \vfill
+
+  {\color{grisnota}\small Septiembre de 2026}
+\end{titlepage}
+
+%% ---- RESUMEN -----------------------------------------------
+\newpage
+\begin{abstract}
+\noindent
+Este documento presenta los resultados de un análisis de aprendizaje no supervisado aplicado al conjunto de datos NYC Taxi Trip Duration, que registra 1{,}458{,}644 viajes realizados en la ciudad de Nueva York entre enero y junio de 2016. El objetivo central es identificar patrones latentes de demanda y comportamiento de viaje que permitan a UrbanMove, empresa de transporte bajo demanda, tomar decisiones operativas cuantificadas. Se aplicaron tres familias de métodos: análisis de información y entropía, segmentación por partición (K-means y DBSCAN), y modelado de mezclas gaussianas con el algoritmo EM. Los hallazgos revelan que la hora del día concentra casi toda su entropía posible (97{.}4\,\%), que cuatro segmentos espaciotemporales explican la estructura principal del servicio, y que la distribución de viajes responde a cuatro perfiles latentes con características operativas diferenciadas. Con base en estos resultados se formulan tres recomendaciones cuantificadas orientadas al posicionamiento de conductores, la tarificación diferencial y la modelización de demanda por régimen.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+%% ============================================================
+\section{Contexto y motivación}
+
+El transporte en taxi representa uno de los sistemas logísticos más complejos de una ciudad de alta densidad. Nueva York opera decenas de miles de viajes diarios con variabilidad temporal y espacial pronunciada: la demanda de las 7~h no se parece en nada a la de las 14~h, y un viaje al aeropuerto JFK tiene un perfil completamente distinto al de un desplazamiento corto en Midtown. Esta heterogeneidad hace que los modelos operativos basados en promedios globales sean sistemáticamente ineficientes.
+
+UrbanMove enfrenta precisamente este reto: diseñar una estrategia de posicionamiento de conductores, tarificación y asignación que responda a la estructura real de la demanda y no a supuestos uniformes. Para ello, el análisis aquí presentado parte de datos históricos reales y aplica técnicas de aprendizaje no supervisado que no requieren etiquetas externas, dejando que la propia distribución de los datos revele los patrones latentes.
+
+El conjunto de datos NYC Taxi Trip Duration, publicado por la plataforma Kaggle en el contexto de una competición de predicción de duración de viajes, cubre el período enero--junio de 2016 y contiene 1{,}458{,}644 registros con once atributos originales: identificador de viaje, proveedor, fechas y horas de recogida y entrega, número de pasajeros, coordenadas de origen y destino, indicador de transmisión diferida y duración en segundos.
+
+%% ============================================================
+\section{Datos y preprocesamiento}
+\label{sec:datos}
+
+\subsection{Criterios de limpieza}
+
+El conjunto de datos crudo presentó cero valores nulos y cero identificadores duplicados, lo que indica un proceso de captura razonablemente robusto. Sin embargo, se detectaron registros con valores implausibles que debían eliminarse para garantizar que los análisis posteriores reflejaran viajes reales. Los criterios aplicados, definidos a priori con base en restricciones físicas y operativas, se resumen en la Tabla~\ref{tab:limpieza}.
+
+\begin{table}[H]
+  \centering
+  \caption{Criterios de depuración aplicados al conjunto crudo.}
+  \label{tab:limpieza}
+  \small
+  \begin{tabular}{lcc}
+    \toprule
+    \textbf{Criterio} & \textbf{Umbral} & \textbf{Registros eliminados} \\
+    \midrule
+    \texttt{passenger\_count} fuera de 1--6 & --- & 65 \,(0{.}00\,\%) \\
+    \texttt{trip\_duration} $<$ 60\,s o $>$ 10\,800\,s & 1\,min -- 3\,h & 10{,}707 \,(0{.}73\,\%) \\
+    Coordenadas de recogida fuera del \emph{bbox} NYC & --- & 731 \,(0{.}05\,\%) \\
+    Coordenadas de destino fuera del \emph{bbox} NYC & --- & 5{,}899 \,(0{.}40\,\%) \\
+    Distancia Haversine $<$ 0{.}10\,km & --- & 13{,}318 \,(0{.}91\,\%) \\
+    Velocidad media $>$ 100\,km/h & --- & 175 \,(0{.}01\,\%) \\
+    \midrule
+    \textbf{Total eliminado (filtros combinados)} & --- & \textbf{23{,}592 \,(1{.}62\,\%)} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Tras la depuración quedaron 1{,}435{,}052 viajes válidos. El umbral mínimo de duración (60 segundos) descarta arranques accidentales y errores de GPS; el máximo (3 horas) conserva viajes largos por congestión severa, que sí ocurren en NYC, pero elimina taxímetros olvidados. La distancia mínima de 100~metros excluye registros donde el origen y el destino son prácticamente idénticos y que no representan desplazamientos reales.
+
+\subsection{Variables derivadas}
+
+La ingeniería de variables es determinante para los análisis posteriores. Las once columnas originales se ampliaron a veintidós mediante la generación de los atributos descritos en la Tabla~\ref{tab:features}. El cálculo de distancias se realizó exclusivamente mediante la fórmula de Haversine, que tiene en cuenta la curvatura terrestre y evita el error sistemático de la distancia euclidiana sobre coordenadas geográficas (error del orden del 0{.}5--1\,\% en las escalas de NYC).
+
+\begin{table}[H]
+  \centering
+  \caption{Variables derivadas incorporadas al análisis.}
+  \label{tab:features}
+  \small
+  \begin{tabular}{lp{9cm}}
+    \toprule
+    \textbf{Variable} & \textbf{Descripción} \\
+    \midrule
+    \texttt{dist\_km}      & Distancia geodésica Haversine entre recogida y destino (km). \\
+    \texttt{speed\_kmh}    & Velocidad media: \texttt{dist\_km} / (\texttt{trip\_duration}/3600). \\
+    \texttt{duration\_min} & Duración en minutos. \\
+    \texttt{hour}          & Hora del día de recogida (0--23). \\
+    \texttt{day\_of\_week} & Día de la semana (0 = lunes, 6 = domingo). \\
+    \texttt{is\_weekend}   & Indicador binario: 1 si sábado o domingo. \\
+    \texttt{franja}        & Franja horaria operativa: \emph{madrugada} (0--5), \emph{mañana pico} (6--9), \emph{mañana baja} (10--12), \emph{tarde pico} (13--17), \emph{tarde baja} (18--20), \emph{noche} (21--23). \\
+    \texttt{zone\_id}      & Celda en una grilla 8$\times$8 sobre el \emph{bbox} de NYC (53 zonas activas de 64 posibles). \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Muestreo reproducible}
+
+Trabajar sobre 1{,}4 millones de registros eleva sustancialmente el costo computacional de algoritmos iterativos como DBSCAN (complejidad $\mathcal{O}(n\log n)$--$\mathcal{O}(n^2)$) y el EM del GMM. Por ello se extrajo una muestra de 50{,}000 viajes mediante muestreo aleatorio estratificado por mes, asignación proporcional, semilla fija \texttt{SEED=42}. La estratificación garantiza que la proporción de cada mes en la muestra replique la del dataset limpio; el coeficiente de variación entre meses es del 4{.}3\,\%, confirmando representatividad temporal.
+
+\begin{table}[H]
+  \centering
+  \caption{Distribución mensual en el dataset limpio y en la muestra.}
+  \label{tab:meses}
+  \small
+  \begin{tabular}{ccc}
+    \toprule
+    \textbf{Mes} & \textbf{Dataset limpio (\%)} & \textbf{Muestra (\%)} \\
+    \midrule
+    Enero   & 15{.}8 & 15{.}8 \\
+    Febrero & 16{.}3 & 16{.}3 \\
+    Marzo   & 17{.}6 & 17{.}6 \\
+    Abril   & 17{.}2 & 17{.}2 \\
+    Mayo    & 17{.}0 & 17{.}0 \\
+    Junio   & 16{.}1 & 16{.}1 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Con 33 zonas activas y 50{,}000 viajes, cada zona recibe en promedio $\approx 1{,}515$ viajes, suficiente para estimar distribuciones de probabilidad y matrices de covarianza de forma estable. La muestra final contiene 35{,}756 viajes laborables (71{.}5\,\%) y 14{,}244 de fin de semana (28{.}5\,\%). Las estadísticas descriptivas centrales son: duración media 14{.}0~min (mediana 11{.}1~min), distancia media 3{.}4~km (mediana 2{.}1~km) y velocidad media 14{.}4~km/h.
+
+%% ============================================================
+\section{Análisis de incertidumbre e información}
+\label{sec:informacion}
+
+\subsection{Entropía de Shannon por zona y por hora}
+
+La entropía de Shannon $H(X) = -\sum_x p(x)\log_2 p(x)$ cuantifica en \emph{bits} la incertidumbre de una variable discreta. Aplicada a las zonas de recogida, $H(\text{zona}) = 2{.}2693$~bits frente al máximo teórico $\log_2(33) = 5{.}04$~bits para 33 zonas equiprobables. Esto significa que la demanda aprovecha apenas el 45\,\% de la capacidad de dispersión posible: dos o tres zonas concentran una fracción desproporcionada de los viajes, lo que valida el diseño de estrategias de posicionamiento focalizadas.
+
+La distribución horaria exhibe un comportamiento opuesto: $H(\text{hora}) = 4{.}4639$~bits frente al máximo de $\log_2(24) = 4{.}585$~bits, es decir, el 97{.}4\,\% de la entropía máxima. Las 24 horas del día reciben demanda relativamente uniforme, y ninguna hora domina de forma absoluta. La implicación operativa es que el servicio debe estar activo en todo el espectro horario, pero las estrategias de diferenciación deben basarse en dónde, no en cuándo en términos absolutos.
+
+\subsection{Entropía condicional}
+
+La entropía condicional $H(Z|F) = \sum_f p(f)\,H(Z|F{=}f)$ mide cuánta incertidumbre queda sobre la zona una vez conocida la franja horaria. Los resultados muestran que la franja con menor incertidumbre zonal es la madrugada: $H(\text{zona}|\text{madrugada}) = 2{.}1325$~bits. La demanda nocturna se concentra en menos lugares, lo que permite decisiones de posicionamiento más precisas. Por el contrario, la mañana pico registra la mayor dispersión: $H(\text{zona}|\text{mañana\,pico}) = 2{.}3438$~bits. En ese tramo, los orígenes de viaje están más repartidos por la ciudad, dificultando las predicciones de zona a partir de la hora sola.
+
+A nivel de hora exacta, la hora 5 presenta la máxima dispersión zonal ($H = 2{.}5738$~bits), mientras que las 19~h registran la mayor concentración ($H = 2{.}1622$~bits), confirmando que el pico vespertino tiene una geografía de demanda más predecible que las horas intempestivas.
+
+\subsection{Información mutua}
+
+La información mutua $I(X;Y) = H(X) - H(X|Y)$ cuantifica cuánto reduce la incertidumbre sobre $X$ el hecho de conocer $Y$. Entre hora y zona se obtiene $I(\text{hora};\text{zona}) = 0{.}044030$~bits, equivalente al 1{.}94\,\% de $H(\text{zona})$. A nivel de franja horaria agregada, la cifra cae a $I(\text{franja};\text{zona}) = 0{.}031191$~bits (1{.}37\,\%). Ambos valores son pequeños pero estrictamente positivos, lo que confirma que hora y zona no son estadísticamente independientes: conocer cuándo ocurre un viaje sí reduce, aunque ligeramente, la incertidumbre sobre dónde ocurre. En la práctica, modelos de asignación que combinen señales temporales y espaciales superarán a modelos que traten ambas dimensiones como independientes.
+
+\subsection{Divergencia KL y entropía cruzada}
+
+Para comparar los regímenes laborable y fin de semana, se estimaron las distribuciones de probabilidad por hora en cada subconjunto y se calculó la divergencia de Kullback-Leibler $\text{KL}(P\!\parallel\! Q) = \sum_x P(x)\log_2\!\frac{P(x)}{Q(x)}$.
+
+\begin{hallazgo}
+$\text{KL}(\text{lab}\!\parallel\!\text{fds}) = 0{.}163617$~bits y $\text{KL}(\text{fds}\!\parallel\!\text{lab}) = 0{.}180599$~bits. La asimetría confirma que los dos regímenes no son intercambiables: usar un modelo entrenado en días laborables para predecir fines de semana impone un sobrecoste de codificación del 3{.}71\,\% respecto al mejor modelo posible.
+\end{hallazgo}
+
+La entropía cruzada $H(P,Q) = H(P) + \text{KL}(P\!\parallel\! Q) = 4{.}576012$~bits verificó el resultado algebraicamente con un error residual inferior a $10^{-15}$. Este hallazgo fundamenta directamente la recomendación de construir modelos de demanda separados por régimen (sección~\ref{sec:recomendaciones}).
+
+\subsection{Estabilidad numérica: log-sum-exp}
+
+El cálculo de probabilidades sobre distribuciones con muchos componentes (33 zonas) expone al software a desbordamiento de punto flotante en sentido negativo (\emph{underflow}). El operador \emph{log-sum-exp} resuelve este problema mediante la identidad:
+\[
+  \mathrm{lse}(\mathbf{x}) = c + \log\!\sum_{i} \exp(x_i - c), \quad c = \max_i x_i.
+\]
+Aplicado al cálculo de los denominadores de responsabilidades en el paso~E del GMM, el error máximo respecto a la aritmética exacta fue $< 2\times10^{-15}$ para las 33 zonas activas, garantizando convergencia numérica estable del algoritmo EM.
+
+%% ============================================================
+\section{Segmentación por partición}
+\label{sec:clustering}
+
+\subsection{K-means: selección del número de clústeres}
+
+K-means se aplicó al espacio de características $(\texttt{hour}, \texttt{duration\_min}, \texttt{dist\_km}, \texttt{speed\_kmh})$, normalizado con media cero y varianza unitaria. La selección de $K$ combinó dos criterios complementarios: la curva de inercia (\emph{codo}) y el coeficiente de silueta promedio.
+
+La inercia disminuye un 19{.}1\,\% al pasar de $K=3$ a $K=4$, y solo un 17\,\% adicional al pasar a $K=5$, con reducción decreciente a partir de ahí. El coeficiente de silueta alcanza su máximo en $K=4$ con un valor de $0{.}2916$, indicando separación moderada pero interpretable de los segmentos. Se adoptó $K=4$ como la solución con mejor balance entre parsimonia y capacidad discriminatoria.
+
+El ajuste con $K=4$ convergió en 8 iteraciones con una inercia final de 91{,}866. Los cuatro segmentos resultantes se describen en la Tabla~\ref{tab:kmeans}.
+
+\begin{table}[H]
+  \centering
+  \caption{Perfiles de los cuatro clústeres K-means ($n=50{,}000$).}
+  \label{tab:kmeans}
+  \small
+  \begin{tabular}{lrrrrrl}
+    \toprule
+    \textbf{Clúster} & \textbf{$n$} & \textbf{\%} & \textbf{Hora} & \textbf{Dur. (min)} & \textbf{Dist. (km)} & \textbf{Perfil} \\
+    \midrule
+    C0 & 18{,}154 & 36{.}3 & 6{.}9  & 10{.}6 & 2{.}64  & Commuter mañana \\
+    C1 &  1{,}102 &  2{.}2 & 14{.}1 & 41{.}5 & 17{.}95 & Aeropuerto (28{.}2\,km/h) \\
+    C2 &  6{,}381 & 12{.}8 & 14{.}4 & 31{.}4 &  7{.}46 & Diurno largo \\
+    C3 & 24{,}363 & 48{.}7 & 18{.}3 & 10{.}6 &  2{.}29 & Tarde/noche central \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+El clúster C1 es el más pequeño (2{.}2\,\%) pero el de mayor valor económico unitario: viajes de $\approx$18~km de distancia a una velocidad media de 28{.}2~km/h, coherente con rutas a JFK o LaGuardia fuera de congestión severa. C3 es el más grande (48{.}7\,\%) y representa el servicio urbano de proximidad en hora vespertina, con distancias medianas de 2{.}29~km.
+
+\subsection{DBSCAN: detección de ruido y zonas atípicas}
+
+DBSCAN (\emph{Density-Based Spatial Clustering of Applications with Noise}) permite identificar clústeres de forma arbitraria y declarar explícitamente puntos de ruido, lo que no es posible con K-means. El hiperparámetro $\varepsilon$ se determinó mediante la gráfica de la distancia al $k$-ésimo vecino más cercano ($k=5$, percentil 95 de la distribución), que señala un codo pronunciado en $\varepsilon = 0{.}10$.
+
+Con esta configuración, DBSCAN identificó 23 clústeres y clasificó 247 viajes (1{.}23\,\%) como ruido. El coeficiente de silueta sin incluir el ruido fue $0{.}0971$, inferior al de K-means, lo que refleja la forma irregular de los clústeres de densidad frente a los convexos de K-means. Los 247 viajes de ruido presentan una velocidad media de 18{.}3~km/h frente a 14{.}3~km/h del resto: son viajes inusualmente rápidos en zonas de baja densidad, posiblemente trayectos exprés o errores residuales de GPS no capturados por los filtros de limpieza.
+
+\begin{hallazgo}
+El ruido detectado por DBSCAN no es aleatoriamente distribuido: se concentra en viajes de alta velocidad y zonas periféricas. Tratarlos con tarifa diferencial es operativamente justificable y mejora la eficiencia de asignación.
+\end{hallazgo}
+
+%% ============================================================
+\section{Mezclas gaussianas y algoritmo EM}
+\label{sec:gmm}
+
+\subsection{Selección del número de componentes}
+
+El Modelo de Mezcla Gaussiana (GMM) asume que los datos provienen de $K$ distribuciones gaussianas con mezcla latente $p(\mathbf{x}) = \sum_{k=1}^{K} \pi_k\,\mathcal{N}(\mathbf{x};\boldsymbol{\mu}_k,\boldsymbol{\Sigma}_k)$. El número de componentes se seleccionó minimizando el Criterio de Información Bayesiano (BIC), que penaliza la verosimilitud por complejidad del modelo:
+
+\begin{table}[H]
+  \centering
+  \caption{BIC por número de componentes gaussianas.}
+  \label{tab:bic}
+  \small
+  \begin{tabular}{cc}
+    \toprule
+    $K$ & \textbf{BIC} \\
+    \midrule
+    2 & 195{,}449 \\
+    3 & 145{,}187 \\
+    4 & \textbf{116{,}936{.}9} \quad $\leftarrow$ mínimo \\
+    5 & 118{,}440 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+El BIC cae de forma pronunciada de $K=2$ a $K=4$ y aumenta ligeramente para $K=5$, señalando inequívocamente cuatro componentes como la solución óptima. El modelo final con $K=4$ y matrices de covarianza completas (\texttt{covariance\_type='full'}) convergió en 26 iteraciones a una log-verosimilitud de $-58{,}257{.}49$.
+
+\subsection{Perfiles latentes de viaje}
+
+Las cuatro componentes del GMM corresponden a perfiles de viaje con interpretación directa en términos operativos, tal como se detalla en la Tabla~\ref{tab:gmm}.
+
+\begin{table}[H]
+  \centering
+  \caption{Perfiles de viaje según el GMM ($K=4$, $n=50{,}000$).}
+  \label{tab:gmm}
+  \small
+  \begin{tabular}{lrrrrl}
+    \toprule
+    \textbf{Perfil} & \textbf{$\pi$ (\%)} & \textbf{Dur. (min)} & \textbf{Dist. (km)} & \textbf{Vel. (km/h)} \\
+    \midrule
+    Micro-urbano rápido     & 27{.}1 &  5{.}66 & 1{.}57 & 16{.}34 \\
+    Tráfico lento-corto     & 29{.}9 &  9{.}70 & 1{.}55 &  9{.}62 \\
+    Commuter medio          & 25{.}3 & 18{.}43 & 3{.}71 & 12{.}32 \\
+    Largo alta velocidad    & 17{.}7 & 27{.}80 & 9{.}13 & 22{.}75 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+El perfil ``Tráfico lento-corto'' (29{.}9\,\%) agrupa viajes de distancia muy similar al micro-urbano (1{.}55~km frente a 1{.}57~km) pero con duración casi el doble (9{.}70~min), lo que implica velocidades promedio de 9{.}62~km/h y señala congestión severa. Desde el punto de vista operativo, un conductor en este perfil da prácticamente la misma vuelta geográfica que en el perfil rápido, pero tarda el doble: la diferencia entre ambos es la congestión, no la distancia. El perfil ``Largo alta velocidad'' (17{.}7\,\%) es el que presenta mayor distancia media (9{.}13~km) y velocidad (22{.}75~km/h), consistent con rutas a aeropuertos o conexiones interboroughs sin congestión.
+
+El grado de asignación es alto: el 92{.}1\,\% de los viajes fue asignado a un perfil con responsabilidad $> 0{.}9$, y solo el 23{.}4\,\% registró alguna ambigüedad ($r_{ik} < 0{.}9$ para el componente dominante).
+
+\subsection{Algoritmo EM: pasos E y M}
+
+El algoritmo EM optimiza iterativamente la log-verosimilitud incompleta mediante dos pasos alternos. En el \textbf{paso E} (\emph{expectation}), se calculan las responsabilidades:
+\[
+  r_{ik} = \frac{\pi_k\,\mathcal{N}(\mathbf{x}_i;\boldsymbol{\mu}_k,\boldsymbol{\Sigma}_k)}
+                {\sum_{j=1}^{K}\pi_j\,\mathcal{N}(\mathbf{x}_i;\boldsymbol{\mu}_j,\boldsymbol{\Sigma}_j)},
+\]
+cuyo denominador se calcula mediante \emph{log-sum-exp} para evitar \emph{underflow}. En el \textbf{paso M} (\emph{maximization}), los parámetros se actualizan como:
+\[
+  N_k = \sum_{i=1}^{n} r_{ik}, \quad
+  \pi_k = \frac{N_k}{n}, \quad
+  \boldsymbol{\mu}_k = \frac{1}{N_k}\sum_i r_{ik}\,\mathbf{x}_i, \quad
+  \boldsymbol{\Sigma}_k = \frac{1}{N_k}\sum_i r_{ik}(\mathbf{x}_i - \boldsymbol{\mu}_k)(\mathbf{x}_i - \boldsymbol{\mu}_k)^\top.
+\]
+
+La monotonía de la convergencia garantiza $\ell^{(t+1)} \geq \ell^{(t)}$ en cada iteración. Una implementación manual del EM ejecutada sobre un subconjunto de diagnóstico confirmó esta propiedad: la log-verosimilitud pasó de $-15{,}760$ a $-12{,}403$ a lo largo de 10 iteraciones, una mejora de $+3{,}357{.}39$ puntos.
+
+\subsection{Sensibilidad a la inicialización}
+
+La inicialización determina en qué mínimo local converge el EM. La comparación entre dos estrategias mostró diferencias significativas:
+
+\begin{itemize}[leftmargin=1.5cm]
+  \item \textbf{K-means++:} log-verosimilitud final $= -58{,}279{.}57$, 26 iteraciones.
+  \item \textbf{Aleatoria:} log-verosimilitud final $= -59{,}549{.}22$, 19 iteraciones.
+\end{itemize}
+
+La inicialización K-means++ supera a la aleatoria en $+1{,}269{.}65$ puntos de log-verosimilitud, confirmando que converge a un óptimo local de mejor calidad aunque requiera más iteraciones. La inicialización aleatoria alcanzó un mínimo local inferior y exhibe mayor variabilidad entre ejecuciones. En producción, K-means++ es la estrategia recomendada.
+
+%% ============================================================
+\section{Recomendaciones operativas}
+\label{sec:recomendaciones}
+
+Los hallazgos de los tres bloques analíticos anteriores se integran en tres recomendaciones cuantificadas para UrbanMove.
+
+\subsection{Posicionamiento predictivo de conductores}
+
+El análisis de entropía zonal y los clústeres de K-means identificaron que las zonas 33, 42 y 41 concentran el 88{.}2\,\% de la demanda en la franja tarde-noche (13--23~h). Con una demanda media de 5{.}7 rotaciones por hora por conductor en ese tramo, tres conductores posicionados simultáneamente en esas zonas cubrirían la demanda de forma sostenida sin necesidad de reposicionamiento frecuente.
+
+La entropía condicional mínima en madrugada ($H = 2{.}1325$~bits) respalda el mismo principio para las horas nocturnas: en esa franja la demanda es geográficamente predecible, por lo que un único conductor bien posicionado puede atender la mayoría de los llamados con tiempos de espera aceptables.
+
+\subsection{Tarificación diferencial por perfil}
+
+El clúster C1 de K-means (aeropuerto, 2{.}2\,\% de viajes) presenta viajes de alto valor: 17{.}95~km de distancia media y 28{.}2~km/h de velocidad, con disponibilidad del conductor comprometida durante $\approx$42~min. Para hacer estos viajes económicamente atractivos para el conductor y reflejar su verdadero costo de oportunidad, se recomienda aplicar un multiplicador de tarifa $2{.}5\times$ respecto a la base. Los 247 viajes de ruido detectados por DBSCAN, que presentan velocidades medias de 18{.}3~km/h frente a 14{.}3~km/h del grueso del servicio, justifican un multiplicador de $1{.}25\times$ por corresponder a recorridos atípicos en zonas periféricas o de baja densidad.
+
+\subsection{Modelos de demanda separados por régimen}
+
+La divergencia KL entre días laborables y fin de semana ($\text{KL}(\text{lab}\!\parallel\!\text{fds}) = 0{.}163617$~bits, $\text{KL}(\text{fds}\!\parallel\!\text{lab}) = 0{.}180599$~bits) cuantifica la incompatibilidad de ambas distribuciones. Un sistema de asignación que use el mismo modelo para ambos regímenes generará decisiones subóptimas: estimado en 1{,}327 despachos subóptimos por mes sobre la muestra analizada, extrapolable al sistema completo.
+
+La solución es entrenar dos modelos separados: uno para días laborables con foco en los picos 7--9~h y 17--21~h (franjas de mayor demanda y menor dispersión zonal), y otro para fines de semana con cobertura extendida hasta las 3~h (la madrugada concentra una proporción mayor de viajes en fin de semana que en días laborables). La tabla resumen de métricas de los cuatro bloques analíticos se presenta a continuación.
+
+\begin{table}[H]
+  \centering
+  \caption{Resumen de métricas clave por bloque analítico.}
+  \label{tab:resumen}
+  \small
+  \begin{tabular}{llr}
+    \toprule
+    \textbf{Bloque} & \textbf{Métrica} & \textbf{Valor} \\
+    \midrule
+    \multirow{4}{*}{Información}
+      & $H(\text{zona})$                        & 2{.}2693 bits \\
+      & $H(\text{hora})$                        & 4{.}4639 bits (97{.}4\,\% del máx.) \\
+      & $I(\text{hora};\text{zona})$            & 0{.}0440 bits \\
+      & $\text{KL}(\text{lab}\!\parallel\!\text{fds})$ & 0{.}1636 bits \\
+    \midrule
+    \multirow{3}{*}{K-means}
+      & Silueta ($K=4$)                         & 0{.}2916 \\
+      & Inercia                                  & 91{,}866 \\
+      & Clúster aeropuerto (C1)                 & 2{.}2\,\% / 17{.}95 km \\
+    \midrule
+    \multirow{3}{*}{DBSCAN}
+      & $\varepsilon$ óptimo                    & 0{.}10 \\
+      & Clústeres detectados                    & 23 \\
+      & Ruido                                   & 247 viajes (1{.}23\,\%) \\
+    \midrule
+    \multirow{4}{*}{GMM / EM}
+      & BIC mínimo ($K=4$)                      & 116{,}936{.}9 \\
+      & Log-verosimilitud final                 & $-58{,}257{.}49$ \\
+      & Iteraciones hasta convergencia          & 26 \\
+      & Responsabilidad media                   & 92{.}1\,\% \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+%% ============================================================
+\section{Limitaciones y trabajo futuro}
+
+El análisis presenta tres limitaciones principales. En primer lugar, el dataset cubre únicamente el primer semestre de 2016; patrones estacionales del segundo semestre (otoño-invierno neoyorquino, con mayor precipitación y demanda de taxi en horas pico) no están representados, lo que puede sobreestimar la velocidad media y subestimar la duración en condiciones adversas. En segundo lugar, el modelo no incorpora variables externas con alto poder predictivo: clima, eventos masivos (conciertos, partidos de la NFL, el Maratón de Nueva York) y incidencias de tráfico en tiempo real. Tercero, el GMM asume colas gaussianas que subestiman la frecuencia de viajes extremadamente largos; distribuciones de colas pesadas como la Student-t podrían capturar mejor ese extremo de la distribución.
+
+Como trabajos futuros se identifican tres líneas prioritarias: (1) integración de señales de eventos en tiempo real para recalibrar dinámicamente los modelos de posicionamiento; (2) exploración de mezclas con distribuciones $t$ de Student para mayor robustez ante viajes atípicos; y (3) conexión del módulo de perfiles de demanda con el algoritmo de asignación de conductores ya desarrollado, que actualmente opera de forma aislada.
+
+%% ============================================================
+\section{Conclusiones}
+
+El análisis no supervisado del sistema de taxis de Nueva York revela una estructura latente de la demanda que no es observable a simple vista en el dataset crudo. La distribución por zonas exhibe baja entropía (45\,\% del máximo teórico), indicando que la demanda está geográficamente concentrada y es direccionable. La distribución horaria es casi uniforme (97{.}4\,\% del máximo), lo que exige un servicio activo en todo el espectro temporal pero con estrategias diferenciadas por franja. La divergencia KL entre laborables y fin de semana es suficientemente grande para justificar modelos separados, y los cuatro perfiles de viaje identificados por el GMM tienen correlatos operativos claros que conectan directamente con decisiones de tarificación y posicionamiento.
+
+En conjunto, los tres métodos no supervisados aplicados son complementarios: K-means proporciona segmentos duros con semántica operativa clara; DBSCAN detecta anomalías que K-means asimilaría como ruido silencioso; y el GMM captura la naturaleza continua y superpuesta de los patrones de viaje. La articulación de estos tres bloques con las métricas de información proporciona una base cuantificada para la toma de decisiones operativas de UrbanMove.
+
+%% ============================================================
+\end{document}
