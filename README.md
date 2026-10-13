@@ -1,20 +1,20 @@
 # UrbanMove — Patrones Invisibles en la Movilidad Urbana de NYC
 
-**Proyecto Retador · ML No Supervisado · Universidad de La Sabana · 2026-II**  
-Prof. Eduardo Carrillo B.
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python) ![scikit-learn](https://img.shields.io/badge/scikit--learn-1.3.0-orange?logo=scikit-learn) ![Jupyter](https://img.shields.io/badge/Jupyter-Notebook-F37626?logo=jupyter) ![License](https://img.shields.io/badge/License-MIT-green)
+
+**ML No Supervisado · Universidad de La Sabana**
+
+> **Business impact en una línea:** Tres recomendaciones operativas cuantificadas — posicionamiento de conductores, tarificación diferenciada y modelos de despacho separados — derivadas de 1.4M viajes reales de taxi en NYC usando teoría de la información, clustering y mezclas gaussianas.
 
 Análisis de consultoría para **UrbanMove**, una plataforma de movilidad en Nueva York que necesita saber qué tan predecible es la demanda por zona y hora, qué perfiles de viaje existen realmente y dónde posicionar a sus conductores. Aplicamos teoría de la información, clustering particional y modelos de mezcla gaussiana sobre viajes reales de taxi, y traducimos los resultados en tres recomendaciones operativas cuantificadas.
 
+![Dashboard](assets/dashboard.png)
+
 ---
 
-## Equipo
+## Skills demostradas
 
-| Rol | Integrante |
-|---|---|
-| Rol 1 — Analista de Incertidumbre e Información | Andrés Padilla |
-| Rol 2 — Arquitecto de Segmentación por Partición | Nicolás Carvajal |
-| Rol 3 — Modelador de Mezclas y Variables Latentes | Luis Ortega |
-| Rol 4 — Estratega de Negocio y Selección de Datos | Sara Montañez |
+`Unsupervised Learning` · `Information Theory` · `Gaussian Mixture Models` · `EM Algorithm` · `K-Means / DBSCAN` · `Geospatial Analysis (Haversine)` · `Shannon Entropy / KL Divergence / Mutual Information` · `Pandas` · `scikit-learn` · `Jupyter` · `LaTeX` · `python-pptx`
 
 ---
 
@@ -52,21 +52,28 @@ Los criterios se definieron antes de filtrar:
 
 ```
 ├── README.md
+├── requirements.txt
+├── src/
+│   ├── __init__.py
+│   └── features.py          # haversine, assign_zone_grid, add_time_features, clean_trips
+├── assets/
+│   ├── dashboard.png         # Resumen visual del análisis completo
+│   └── generate_dashboard.py # Script para regenerar el dashboard
 ├── notebooks/
 │   ├── 00_data_prep.ipynb             # Limpieza, variables derivadas y muestra reproducible
-│   ├── 01_informacion.ipynb           # Rol 1: entropía, entropía condicional, MI, KL, entropía cruzada, log-sum-exp
-│   ├── 02_clustering.ipynb            # Rol 2: K-Means y DBSCAN, validación y tratamiento del ruido
-│   ├── 03_gmm_em.ipynb                # Rol 3: GMM, EM manual (E-step / M-step), inicializaciones
-│   └── 04_negocio_integracion.ipynb   # Rol 4: integración y recomendaciones para UrbanMove
+│   ├── 01_informacion.ipynb           # Entropía, entropía condicional, MI, KL, log-sum-exp
+│   ├── 02_clustering.ipynb            # K-Means y DBSCAN, validación y tratamiento del ruido
+│   ├── 03_gmm_em.ipynb                # GMM, EM manual (E-step / M-step), inicializaciones
+│   └── 04_negocio_integracion.ipynb   # Integración y recomendaciones para UrbanMove
 ├── data/
 │   └── clean_sample.parquet           # Generado por 00_data_prep (50.000 viajes, seed=42)
 ├── docs/
-│   ├── informe_urbanmove.pdf          # Informe académico completo
+│   ├── informe_urbanmove.pdf          # Informe completo
 │   ├── informe_urbanmove.tex          # Fuente LaTeX del informe
 │   ├── generar_informe_pdf.py         # Script para regenerar el PDF sin LaTeX instalado
 │   └── *.png                          # Figuras generadas por los notebooks
 ├── entrega/
-│   ├── guion_video.md                 # Guion del video de presentación (10-11 min)
+│   ├── key_findings_walkthrough.md    # Narrativa completa de hallazgos por bloque
 │   ├── presentacion_urbanmove.pptx    # Presentación de diapositivas
 │   └── generar_presentacion.py        # Script para regenerar el PPTX
 └── train/
@@ -79,7 +86,7 @@ Los criterios se definieron antes de filtrar:
 
 1. Instalar dependencias:
    ```bash
-   pip install pandas numpy matplotlib scikit-learn scipy pyarrow reportlab python-pptx
+   pip install -r requirements.txt
    ```
    Los notebooks se ejecutaron con scikit-learn 1.3.0.
 
@@ -90,6 +97,11 @@ Los criterios se definieron antes de filtrar:
    - `01`, `02` y `03` leen esa muestra;
    - `04` integra los resultados.
 
+4. Las funciones de feature engineering están disponibles como módulo:
+   ```python
+   from src.features import haversine, assign_zone_grid, add_time_features, clean_trips
+   ```
+
 > **Nota sobre rutas:** algunas celdas usan rutas relativas (`../data/clean_sample.parquet`). Si el notebook no encuentra el archivo, ajusta la ruta a la ubicación del parquet en tu máquina.
 
 Todos los procesos aleatorios usan `SEED = 42` → resultados reproducibles.
@@ -98,7 +110,7 @@ Todos los procesos aleatorios usan `SEED = 42` → resultados reproducibles.
 
 ## Resultados principales
 
-### Rol 1 — Teoría de la información
+### Bloque 1 — Teoría de la información
 
 | Métrica | Valor | Lectura |
 |---|---|---|
@@ -111,7 +123,11 @@ Todos los procesos aleatorios usan `SEED = 42` → resultados reproducibles.
 | H(laboral, fin de semana) | 4,5760 bits = H(P) + KL | Sobrecosto de 3,71% con un modelo único |
 | log-sum-exp en [−1000, −1001, −1002] | −999,5924 (suma ingenua: −∞) | Estabilidad numérica para el E-step |
 
-### Rol 2 — Clustering por partición
+![Entropía por franja horaria](docs/fig_resumen_entropia_franja.png)
+
+![KL Divergencia laboral vs fin de semana](docs/fig4_kl_divergencia.png)
+
+### Bloque 2 — Clustering por partición
 
 | Método | Parámetros | Clusters | Silueta | Ruido |
 |---|---|---|---|---|
@@ -125,7 +141,7 @@ Todos los procesos aleatorios usan `SEED = 42` → resultados reproducibles.
 | C2 Diurno largo | 12,8% | 14,4 h | 31,4 min | 7,46 km |
 | C3 Tarde/Noche central | 48,7% | 18,3 h | 10,6 min | 2,29 km |
 
-### Rol 3 — Mezcla gaussiana y EM
+### Bloque 3 — Mezcla gaussiana y EM
 
 - **Modelo final:** K = 4 (mínimo BIC = 116.936,9), covarianza completa, inicialización K-means++.
 - **Convergió en 26 iteraciones**, log-verosimilitud −58.257,5.
@@ -143,18 +159,26 @@ Todos los procesos aleatorios usan `SEED = 42` → resultados reproducibles.
 
 ---
 
-## Recomendaciones para UrbanMove (Rol 4)
+## Recomendaciones para UrbanMove
 
-1. **Posicionamiento de conductores.**
-   - Entre las 17 y las 22 h ocurre el 34,6% de los viajes, y las zonas 33, 42 y 41 (Manhattan central) concentran el **88,2%** de ellos.
-   - Con viajes de 10,6 min (5,7 viajes/conductor/hora) se requieren ~3 conductores simultáneos a escala de la muestra.
+![Recomendaciones operativas](docs/fig_tabla_recomendaciones.png)
 
-2. **Tarificación diferenciada.**
-   - Aeropuerto/periferia: **multiplicador 2,5×**. Zonas atípicas DBSCAN: **1,25×**.
+**1. Posicionamiento de conductores.**
+- Entre las 17 y las 22 h ocurre el 34,6% de los viajes, y las zonas 33, 42 y 41 (Manhattan central) concentran el **88,2%** de ellos.
+- Con viajes de 10,6 min (5,7 viajes/conductor/hora) se requieren ~3 conductores simultáneos a escala de la muestra.
 
-3. **Dos modelos de despacho (laboral / fin de semana).**
-   - KL = 0,1636 bits → 3,71% de sobrecosto con modelo único → ~1.300 decisiones subóptimas sobre la muestra.
-   - Laboral: foco en picos 7–9 h y 17–21 h. Fin de semana: cobertura extendida hasta las 3 h.
+![Posicionamiento — cobertura de demanda](docs/fig_rec1_posicionamiento.png)
+
+**2. Tarificación diferenciada.**
+- Aeropuerto/periferia: **multiplicador 2,5×**. Zonas atípicas DBSCAN: **1,25×**.
+
+![Tarificación diferenciada por cluster](docs/fig_rec2_tarificacion.png)
+
+**3. Dos modelos de despacho (laboral / fin de semana).**
+- KL = 0,1636 bits → 3,71% de sobrecosto con modelo único → ~1.300 decisiones subóptimas sobre la muestra.
+- Laboral: foco en picos 7–9 h y 17–21 h. Fin de semana: cobertura extendida hasta las 3 h.
+
+![Modelos separados laboral/fin de semana](docs/fig_rec3_modelos_separados.png)
 
 ### Limitaciones y siguientes pasos
 

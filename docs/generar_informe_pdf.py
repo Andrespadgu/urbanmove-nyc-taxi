@@ -196,7 +196,7 @@ def build():
         leftMargin=MARGIN, rightMargin=MARGIN,
         topMargin=MARGIN,  bottomMargin=2*cm,
         title='UrbanMove — Análisis No Supervisado NYC Taxi',
-        author='Andrés Padilla · Nicolás Carvajal · Luis Ortega · Sara Montañez',
+        author='Andrés Padilla',
     )
 
     story = []
@@ -214,12 +214,11 @@ def build():
                              spaceAfter=20, spaceBefore=6))
     story.append(sp(16))
     story.append(Paragraph('<i>Aprendizaje de Máquinas No Supervisado</i>', estilo_subtitulo))
-    story.append(Paragraph('Universidad de La Sabana · Período 2026-II', estilo_subtitulo))
+    story.append(Paragraph('Universidad de La Sabana · Aprendizaje No Supervisado', estilo_subtitulo))
     story.append(sp(40))
-    story.append(Paragraph('<b>Integrantes</b>', S('eit', parent=estilo_miembros, fontSize=12, fontName='Arial-Bold')))
+    story.append(Paragraph('<b>Autor</b>', S('eit', parent=estilo_miembros, fontSize=12, fontName='Arial-Bold')))
     story.append(sp(8))
-    for nombre in ['Andrés Padilla', 'Nicolás Carvajal', 'Luis Ortega', 'Sara Montañez']:
-        story.append(Paragraph(nombre, estilo_miembros))
+    story.append(Paragraph('Andrés Padilla', estilo_miembros))
     story.append(sp(60))
     story.append(Paragraph('<font color="#888888">Septiembre de 2026</font>', estilo_subtitulo))
     story.append(PageBreak())

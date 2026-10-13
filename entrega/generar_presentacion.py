@@ -106,7 +106,7 @@ add_text(sl, "UrbanMove · NYC Taxi Trip Duration",
          1.0, 3.1, 11.3, 0.7, font_size=22,
          color=C_ACCENT_1, align=PP_ALIGN.CENTER)
 
-add_text(sl, "ML No Supervisado · Universidad de La Sabana · 2026-II",
+add_text(sl, "ML No Supervisado · Universidad de La Sabana",
          1.0, 3.8, 11.3, 0.5, font_size=14,
          color=C_LIGHT_GRAY, align=PP_ALIGN.CENTER)
 
@@ -953,7 +953,7 @@ for i, (val, label) in enumerate(final_stats):
     add_text(sl, label, x, 5.15, 3.2, 0.7, font_size=11,
              color=C_LIGHT_GRAY, align=PP_ALIGN.CENTER)
 
-add_text(sl, "ML No Supervisado · Universidad de La Sabana · 2026-II",
+add_text(sl, "ML No Supervisado · Universidad de La Sabana",
          1.0, 6.4, 11.3, 0.4, font_size=11,
          color=C_LIGHT_GRAY, align=PP_ALIGN.CENTER)
 
