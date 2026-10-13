@@ -110,7 +110,7 @@ Todos los procesos aleatorios usan `SEED = 42` → resultados reproducibles.
 
 ## Resultados principales
 
-### Bloque 1 — Teoría de la información
+### Bloque 1 - Teoría de la información
 
 | Métrica | Valor | Lectura |
 |---|---|---|
@@ -127,7 +127,7 @@ Todos los procesos aleatorios usan `SEED = 42` → resultados reproducibles.
 
 ![KL Divergencia laboral vs fin de semana](docs/fig4_kl_divergencia.png)
 
-### Bloque 2 — Clustering por partición
+### Bloque 2 - Clustering por partición
 
 | Método | Parámetros | Clusters | Silueta | Ruido |
 |---|---|---|---|---|
@@ -141,7 +141,7 @@ Todos los procesos aleatorios usan `SEED = 42` → resultados reproducibles.
 | C2 Diurno largo | 12,8% | 14,4 h | 31,4 min | 7,46 km |
 | C3 Tarde/Noche central | 48,7% | 18,3 h | 10,6 min | 2,29 km |
 
-### Bloque 3 — Mezcla gaussiana y EM
+### Bloque 3 - Mezcla gaussiana y EM
 
 - **Modelo final:** K = 4 (mínimo BIC = 116.936,9), covarianza completa, inicialización K-means++.
 - **Convergió en 26 iteraciones**, log-verosimilitud −58.257,5.
