@@ -4,7 +4,7 @@
 
 **ML No Supervisado · Universidad de La Sabana**
 
-> **Business impact en una línea:** Tres recomendaciones operativas cuantificadas — posicionamiento de conductores, tarificación diferenciada y modelos de despacho separados - derivadas de 1.4M viajes reales de taxi en NYC usando teoría de la información, clustering y mezclas gaussianas.
+> **Business impact en una línea:** Tres recomendaciones operativas cuantificadas - posicionamiento de conductores, tarificación diferenciada y modelos de despacho separados - derivadas de 1.4M viajes reales de taxi en NYC usando teoría de la información, clustering y mezclas gaussianas.
 
 Análisis de consultoría para **UrbanMove**, una plataforma de movilidad en Nueva York que necesita saber qué tan predecible es la demanda por zona y hora, qué perfiles de viaje existen realmente y dónde posicionar a sus conductores. Aplicamos teoría de la información, clustering particional y modelos de mezcla gaussiana sobre viajes reales de taxi, y traducimos los resultados en tres recomendaciones operativas cuantificadas.
 
